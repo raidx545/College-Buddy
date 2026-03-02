@@ -1,14 +1,6 @@
-"""
-FastAPI server that exposes the RAG engine as a REST API.
-
-Usage:
-    python server.py
-    
-The server runs on http://localhost:8000
-"""
-
 import os
 import glob
+import threading
 from pathlib import Path
 from datetime import datetime
 
@@ -30,19 +22,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Load bot once at startup ---
+# --- Load bot in background so Render port binds immediately ---
 bot: SyllabusBot = None
 
 
-@app.on_event("startup")
-def startup():
+def _load_bot():
     global bot
     try:
         bot = SyllabusBot()
         print("✅ SyllabusBot loaded successfully.")
-    except RuntimeError as e:
+    except Exception as e:
         print(f"❌ Failed to load bot: {e}")
         print("   Run 'python build_embeddings.py' first.")
+
+
+@app.on_event("startup")
+def startup():
+    thread = threading.Thread(target=_load_bot, daemon=True)
+    thread.start()
 
 
 # --- Request/Response models ---
