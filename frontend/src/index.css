@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 12%;
+
+    --primary: 217 71% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 20% 94%;
+    --secondary-foreground: 215 25% 12%;
+
+    --muted: 214 20% 96%;
+    --muted-foreground: 215 14% 46%;
+
+    --accent: 214 20% 92%;
+    --accent-foreground: 215 25% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 217 71% 45%;
+
+    --radius: 0.75rem;
+
+    --chat-user: 217 71% 45%;
+    --chat-user-foreground: 0 0% 100%;
+    --chat-bot: 214 20% 96%;
+    --chat-bot-foreground: 215 25% 12%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 14% 34%;
+    --sidebar-primary: 217 71% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 20% 96%;
+    --sidebar-accent-foreground: 215 25% 12%;
+    --sidebar-border: 214 20% 92%;
+    --sidebar-ring: 217 71% 45%;
+    --sidebar-hover: 214 20% 94%;
+  }
+
+  .dark {
+    --background: 222 20% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 222 18% 12%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 222 18% 12%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 217 71% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 14% 18%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 222 14% 16%;
+    --muted-foreground: 215 14% 55%;
+
+    --accent: 222 14% 18%;
+    --accent-foreground: 210 20% 95%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 14% 18%;
+    --input: 222 14% 20%;
+    --ring: 217 71% 53%;
+
+    --chat-user: 217 71% 50%;
+    --chat-user-foreground: 0 0% 100%;
+    --chat-bot: 222 14% 16%;
+    --chat-bot-foreground: 210 20% 90%;
+
+    --sidebar-background: 222 18% 10%;
+    --sidebar-foreground: 215 14% 65%;
+    --sidebar-primary: 217 71% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 14% 16%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 222 14% 16%;
+    --sidebar-ring: 217 71% 53%;
+    --sidebar-hover: 222 14% 14%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+  }
+}

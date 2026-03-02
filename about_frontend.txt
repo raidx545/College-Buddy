@@ -1,0 +1,99 @@
+Project Overview
+CampusAI is a ChatGPT-style college assistant web app built for students. It helps with academics, notices, syllabus, exams, events, placements, and campus info — plus a resource-sharing hub for study materials.
+
+Tech Stack
+Layer	Technology
+Framework	React 18 with Vite
+Language	TypeScript
+Routing	React Router v6
+Styling	Tailwind CSS with custom design tokens
+Components	shadcn/ui (Button, Card, Avatar, ScrollArea, Sheet, DropdownMenu, etc.)
+Icons	lucide-react
+Animations	framer-motion
+State	React Context (ChatContext, ThemeContext)
+Date formatting	date-fns
+Architecture & File Structure
+src/
+├── App.tsx                    # Root: routes + providers
+├── index.css                  # Tailwind + custom CSS variables
+├── contexts/
+│   ├── ChatContext.tsx         # Chat sessions, messages, mock bot logic
+│   └── ThemeContext.tsx        # Light/dark mode with localStorage persistence
+├── components/
+│   ├── AppLayout.tsx           # Responsive shell (sidebar + header)
+│   ├── AppSidebar.tsx          # Sidebar with chat history, nav, user profile
+│   ├── ChatMessage.tsx         # Message bubble with basic markdown
+│   ├── TypingIndicator.tsx     # Animated 3-dot typing indicator
+│   └── ui/                    # ~40+ shadcn/ui primitives
+├── pages/
+│   ├── Index.tsx               # Main chat interface
+│   ├── Downloads.tsx           # Study resources grid
+│   ├── Auth.tsx                # Login/signup (mocked)
+│   └── NotFound.tsx            # 404 page
+└── hooks/
+    └── use-mobile.tsx          # Responsive breakpoint hook
+Design System
+Typography: Inter font family
+Color scheme: "Academic blue" primary (hsl(217, 71%, 45%)) with neutral slates
+Dark/light mode: Full support via CSS custom properties in :root and .dark
+Custom tokens for chat bubbles (--chat-user, --chat-bot), sidebar colors, and border/accent
+Rounded corners: rounded-xl / rounded-2xl throughout
+Soft shadows: shadow-sm to shadow-md
+Glassmorphism: backdrop-blur-sm on sticky headers
+Pages & Features
+1. Chat Interface (/ — Index.tsx)
+Empty state: Greeting with sparkle icon + 4 clickable suggestion chips (Summarize DBMS, Tech Fest, OS papers, Placements)
+Conversation view: Auto-scrolling message list with framer-motion transitions
+User messages: Right-aligned, blue background, white text, rounded bubble
+Bot messages: Left-aligned, muted background, with GraduationCap avatar, basic markdown (bold, lists)
+Timestamps: Tiny muted text below each bubble (h:mm a format)
+Typing indicator: 3 animated pulsing dots while bot "responds"
+Input area: Sticky bottom bar with paperclip attach button, auto-growing textarea, blue send button. Disabled when empty.
+2. Downloads/Resources (/downloads — Downloads.tsx)
+Header: Title + subtitle
+Search bar: Real-time filtering by title or course name
+Category pills: All, Notes, PYQs, Syllabus, Assignments — with active highlight
+Resource grid: Responsive cards (1→2→3→4 columns) with file icon, title, course, date, and download button
+Empty state: Icon + "No resources found" message
+8 mock resources covering DBMS, OS, DSA, CN, ML, TOC, SE, AI
+3. Auth (/auth — Auth.tsx)
+Tabbed Sign In / Sign Up with animated toggle
+Fields: Full Name (signup only), Student Email (with mail icon), Password (with show/hide toggle)
+Google OAuth button with official Google logo SVG
+Mocked: Form submit just navigates to /
+4. 404 Page (* — NotFound.tsx)
+App Shell & Navigation
+Desktop
+Fixed sidebar (260px) on the left with: logo, "New Chat" button, "Study Resources" nav link, date-grouped chat history (Today / Previous 7 Days / Older), and user profile dropdown at the bottom
+Top header bar on the right with theme toggle (sun/moon icon)
+Mobile
+Sidebar hidden behind hamburger menu using shadcn Sheet (slide-out drawer)
+Sticky top bar with hamburger, "CampusAI" title, and theme toggle
+State Management
+ChatContext
+Manages an array of ChatSession objects, each with id, title, messages[], and createdAt
+Actions: createNewChat, setActiveSession, sendMessage, deleteSession, renameSession
+Mock bot: Randomly picks from 5 pre-written academic responses after a 1.5s simulated delay
+Auto-titles new chats from the first message (first 40 chars)
+Pre-seeded with 2 example conversations
+ThemeContext
+Tracks "light" | "dark" state, persisted in localStorage
+Toggles .dark class on <html> element
+Responsive Breakpoints
+Breakpoint	Behavior
+Mobile (<768px)	Sidebar in drawer, tighter padding, single-column grids
+Tablet (768-1024px)	2-3 column resource grid, standard spacing
+Desktop (>1024px)	Fixed sidebar, 3-4 column grid, comfortable layout
+What's Currently Mocked (No Backend)
+Authentication (form just redirects)
+Bot responses (random from 5 hardcoded strings)
+Chat persistence (in-memory only, lost on refresh)
+File downloads (buttons are non-functional)
+User profile data (hardcoded "John Student")
+File attachments (paperclip button is decorative)
+Next Steps to Make It Production-Ready
+Connect a backend (Supabase via Lovable Cloud) for auth, database, and file storage
+Integrate an AI API (OpenAI/Gemini) for real bot responses
+Persist chat history in a database
+Real file uploads/downloads with Supabase Storage
+Real authentication with email/password and Google OAuth
