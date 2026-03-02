@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from rag_engine import SyllabusBot
+# NOTE: rag_engine is NOT imported here — it's loaded lazily in the
+# background thread so uvicorn can bind to the port immediately.
 
 # --- App setup ---
 app = FastAPI(title="CampusAI Backend", version="1.0.0")
@@ -23,12 +24,13 @@ app.add_middleware(
 )
 
 # --- Load bot in background so Render port binds immediately ---
-bot: SyllabusBot = None
+bot = None
 
 
 def _load_bot():
     global bot
     try:
+        from rag_engine import SyllabusBot  # lazy import — heavy ML libs
         bot = SyllabusBot()
         print("✅ SyllabusBot loaded successfully.")
     except Exception as e:
