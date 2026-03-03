@@ -1,18 +1,15 @@
-# Python
 venv/
 __pycache__/
 *.pyc
 .env
 
-# ChromaDB vector store
-
 chroma_db_main/
 Stuff/
-# Node / Frontend
+
 frontend/node_modules/
 frontend/dist/
 frontend/.env.local
 
-# OS files
 .DS_Store
 *.swp
+college_buddy_server.pem
