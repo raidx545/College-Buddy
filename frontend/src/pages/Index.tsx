@@ -1,16 +1,13 @@
 import { useRef, useEffect, useState } from "react";
-import { Send, Paperclip, Sparkles, BookOpen, Calendar, FileText } from "lucide-react";
+import { Send, Plus, Smile, Search, Menu } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 import { ChatMessage } from "@/components/ChatMessage";
 import { TypingIndicator } from "@/components/TypingIndicator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 
 const suggestions = [
-  { icon: BookOpen, text: "Summarize the DBMS syllabus", color: "text-blue-500" },
-  { icon: Calendar, text: "When is the next tech fest?", color: "text-emerald-500" },
-  { icon: FileText, text: "Download previous OS question papers", color: "text-amber-500" },
-  { icon: Sparkles, text: "Help me prepare for placements", color: "text-purple-500" },
+  { text: "How do I solve quadratic equations?" },
+  { text: "Check my thesis statement" },
 ];
 
 const Index = () => {
@@ -49,9 +46,9 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ background: '#FAFAF7' }}>
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin py-6">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin py-4">
         <AnimatePresence mode="wait">
           {isEmpty ? (
             <motion.div
@@ -61,25 +58,41 @@ const Index = () => {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center h-full px-4"
             >
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-semibold text-foreground mb-2">How can I help you today?</h1>
-              <p className="text-muted-foreground text-sm mb-8 text-center max-w-md">
-                Ask me about academics, notices, syllabus, exams, events, placements, or campus info.
+              {/* 3D Mascot with border ring */}
+              <motion.div
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                className="relative mb-4"
+              >
+                <div className="h-36 w-36 rounded-full border-4 border-indigo-200 bg-gradient-to-b from-indigo-100 to-white p-3 shadow-lg">
+                  <img
+                    src="/mascot.png"
+                    alt="CampusAI Mascot"
+                    className="h-full w-full object-contain animate-mascot-bounce"
+                  />
+                </div>
+              </motion.div>
+
+              <h1 className="text-2xl font-black text-gray-900 mb-1">
+                CampusAI Mascot
+              </h1>
+              <p className="text-gray-500 text-sm mb-8 text-center max-w-sm">
+                Ask me anything about your courses!
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full max-w-lg px-2 sm:px-0">
+
+              {/* Suggestion chips */}
+              <div className="flex flex-wrap justify-center gap-2 max-w-md">
                 {suggestions.map((s, i) => (
                   <motion.button
                     key={i}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
                     onClick={() => { setInput(s.text); sendMessage(s.text); }}
-                    className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-left text-sm group"
+                    className="px-4 py-2.5 rounded-full border-2 border-gray-200 bg-white hover:border-indigo-400 hover:bg-indigo-50 transition-all text-sm text-gray-600 hover:text-indigo-600 shadow-sm font-semibold"
                   >
-                    <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
-                    <span className="text-foreground group-hover:text-foreground">{s.text}</span>
+                    {s.text}
                   </motion.button>
                 ))}
               </div>
@@ -101,32 +114,29 @@ const Index = () => {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4">
-        <div className="max-w-3xl mx-auto relative px-1 sm:px-0">
-          <div className="flex items-end gap-2 bg-card border border-border rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
-            <button className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground shrink-0">
-              <Paperclip className="h-5 w-5" />
-            </button>
+      <div className="p-3 sm:p-4" style={{ background: '#FAFAF7' }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-2 bg-white border-2 border-gray-200 rounded-full px-3 py-2 shadow-sm focus-within:border-indigo-400 transition-all">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your courses, exams, events..."
+              placeholder="Type a message..."
               rows={1}
-              className="flex-1 bg-transparent border-0 outline-none resize-none text-sm py-2 placeholder:text-muted-foreground max-h-40"
+              className="flex-1 bg-transparent border-0 outline-none resize-none text-sm py-2 placeholder:text-gray-400 max-h-40"
             />
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 shrink-0">
+              <Smile className="h-5 w-5" />
+            </button>
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+              className="p-2.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 shadow-md"
             >
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-2">
-            CampusAI can make mistakes. Verify important academic information.
-          </p>
         </div>
       </div>
     </div>

@@ -12,3 +12,4 @@ frontend/.env.local
 .DS_Store
 *.swp
 college_buddy_server.pem
+frontend_backup/
