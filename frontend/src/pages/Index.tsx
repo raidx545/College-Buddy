@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Send, Plus, Smile, Search, Menu } from "lucide-react";
+import { Send, Plus, Smile, Menu } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 import { ChatMessage } from "@/components/ChatMessage";
 import { TypingIndicator } from "@/components/TypingIndicator";

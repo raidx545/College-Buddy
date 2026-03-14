@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, Search, Star, Share2 } from "lucide-react";
+import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
@@ -43,20 +43,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     <div className="flex h-screen w-full">
       <AppSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-12 flex items-center justify-between px-4 border-b border-gray-100 bg-white/50 backdrop-blur-sm">
+        <header className="h-12 flex items-center px-4 border-b border-gray-100 bg-white/50 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm text-gray-800">{chatTitle}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
-              <Search className="h-4 w-4" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
-              <Star className="h-4 w-4" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
-              <Share2 className="h-4 w-4" />
-            </button>
           </div>
         </header>
         <main className="flex-1 overflow-hidden">{children}</main>

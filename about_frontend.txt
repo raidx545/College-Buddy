@@ -91,6 +91,12 @@ Chat persistence (in-memory only, lost on refresh)
 File downloads (buttons are non-functional)
 User profile data (hardcoded "John Student")
 File attachments (paperclip button is decorative)
+Future Features (Temporarily Removed)
+1. Search — Search through chat messages and conversations (was in header bar)
+2. Share — Share a conversation or chat snippet with others (was in header bar)
+3. Save/Bookmark — Star/bookmark important conversations for quick access (was in header bar)
+These features were removed from the frontend on 2026-03-15 and are planned for future implementation.
+
 Next Steps to Make It Production-Ready
 Connect a backend (Supabase via Lovable Cloud) for auth, database, and file storage
 Integrate an AI API (OpenAI/Gemini) for real bot responses
