@@ -1,0 +1,44 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Frontend source (only dist/ is needed)
+frontend/node_modules/
+frontend/src/
+frontend/public/
+frontend/.env*
+frontend/tsconfig*
+frontend/vite.config*
+frontend/package*.json
+frontend/eslint*
+frontend/components.json
+frontend/postcss*
+frontend/tailwind*
+frontend/index.html
+
+# Backups
+frontend_backup/
+
+# Dev databases
+chroma_db_main/
+
+# Git
+.git/
+.gitignore
+
+# Dev/misc files
+*.pem
+*.swp
+.DS_Store
+.env.example
+stitch/
+check.py
+app.py
+main.py
+index.html
+ABOUT_PROJECT.md
+about_frontend.txt
+build_embeddings.py

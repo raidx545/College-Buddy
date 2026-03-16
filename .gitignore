@@ -1,15 +1,33 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-.env
+*.pyo
+*.egg-info/
 
+# Secrets & keys — NEVER commit these!
+.env
+.env.*
+*.pem
+
+# Generated / large data (reproducible)
+chroma_db/
 chroma_db_main/
 Stuff/
 
+# Frontend
 frontend/node_modules/
-frontend/.env.local
+frontend/dist/
 
+# Backups & scratch files
+frontend_backup/
+stitch/
+app.py
+main.py
+check.py
+index.html
+about_frontend.txt
+
+# OS junk
 .DS_Store
 *.swp
-college_buddy_server.pem
-frontend_backup/

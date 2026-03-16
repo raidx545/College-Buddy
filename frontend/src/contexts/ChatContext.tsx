@@ -41,6 +41,8 @@ interface ChatContextType {
   isTyping: boolean;
   selectedSubject: string;
   setSelectedSubject: (subject: string) => void;
+  streamingMessageId: string | null;
+  onStreamingComplete: () => void;
 }
 
 const ChatContext = createContext<ChatContextType>({} as ChatContextType);
@@ -53,6 +55,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState("All");
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+
+  const onStreamingComplete = () => setStreamingMessageId(null);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || null;
 
@@ -161,14 +166,18 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const answer = await sendChatMessage(content, selectedSubject);
+      const botMsgId = (Date.now() + 1).toString();
       const botMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: botMsgId,
         role: "bot",
         content: answer,
         timestamp: new Date(),
       };
 
       const finalMessages = [...newMessages, botMsg];
+
+      // Start streaming animation for this message
+      setStreamingMessageId(botMsgId);
 
       // Update UI
       setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: finalMessages } : s));
@@ -228,6 +237,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         isTyping,
         selectedSubject,
         setSelectedSubject,
+        streamingMessageId,
+        onStreamingComplete,
       }}
     >
       {children}

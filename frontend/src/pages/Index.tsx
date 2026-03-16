@@ -11,7 +11,7 @@ const suggestions = [
 ];
 
 const Index = () => {
-  const { activeSession, sendMessage, isTyping } = useChat();
+  const { activeSession, sendMessage, isTyping, streamingMessageId, onStreamingComplete } = useChat();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -22,7 +22,18 @@ const Index = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeSession?.messages, isTyping]);
+  }, [activeSession?.messages, isTyping, streamingMessageId]);
+
+  // Auto-scroll during streaming animation
+  useEffect(() => {
+    if (!streamingMessageId) return;
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [streamingMessageId]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -105,7 +116,12 @@ const Index = () => {
               className="flex flex-col gap-4"
             >
               {activeSession?.messages.map((msg) => (
-                <ChatMessage key={msg.id} message={msg} />
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  isStreaming={msg.id === streamingMessageId}
+                  onStreamingComplete={onStreamingComplete}
+                />
               ))}
               {isTyping && <TypingIndicator />}
             </motion.div>
