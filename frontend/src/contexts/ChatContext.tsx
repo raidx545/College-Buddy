@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { sendChatMessage } from "@/lib/api";
+import { sendChatMessage, streamChatMessage } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { db } from "@/lib/firebase";
 import {
@@ -165,24 +165,53 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setIsTyping(true);
 
     try {
-      const answer = await sendChatMessage(content, selectedSubject);
       const botMsgId = (Date.now() + 1).toString();
-      const botMsg: ChatMessage = {
+      
+      // Initialize an empty bot message
+      const initialBotMsg: ChatMessage = {
         id: botMsgId,
         role: "bot",
-        content: answer,
+        content: "",
         timestamp: new Date(),
       };
+      
+      // Add empty bot message to UI immediately
+      setSessions(prev => prev.map(s => 
+        s.id === currentSessionId 
+          ? { ...s, messages: [...newMessages, initialBotMsg] } 
+          : s
+      ));
 
-      const finalMessages = [...newMessages, botMsg];
-
-      // Start streaming animation for this message
+      // Start streaming (no fake animation, real stream)
       setStreamingMessageId(botMsgId);
+      
+      let finalContent = "";
 
-      // Update UI
-      setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: finalMessages } : s));
+      await streamChatMessage(content, selectedSubject, (chunk) => {
+        finalContent += chunk;
+        
+        // Update the UI with the new chunk
+        setSessions(prev => prev.map(s => {
+          if (s.id !== currentSessionId) return s;
+          
+          const msgs = [...s.messages];
+          const lastIdx = msgs.length - 1;
+          
+          // Ensure we are updating the bot message we just added
+          if (lastIdx >= 0 && msgs[lastIdx].id === botMsgId) {
+            msgs[lastIdx] = { ...msgs[lastIdx], content: finalContent };
+          }
+          
+          return { ...s, messages: msgs };
+        }));
+      });
 
-      // Update Firestore
+      // Stream complete: Update Firestore ONCE at the end
+      const finalBotMsg: ChatMessage = {
+        ...initialBotMsg,
+        content: finalContent,
+      };
+      const finalMessages = [...newMessages, finalBotMsg];
       await updateDoc(sessionRef, { messages: finalMessages });
 
     } catch (error) {
@@ -198,6 +227,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(sessionRef, { messages: finalErrMessages });
     } finally {
       setIsTyping(false);
+      setStreamingMessageId(null);
     }
   };
 

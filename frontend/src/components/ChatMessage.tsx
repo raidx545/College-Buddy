@@ -22,42 +22,15 @@ export const ChatMessage = ({ message, isStreaming = false, onStreamingComplete 
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isStreaming) {
-      setDisplayedText(message.content);
-      return;
+    // True streaming: we do not need the requestAnimationFrame loop anymore!
+    // The content will continually update since `message.content` changes in ChatContext.
+    setDisplayedText(message.content);
+
+    // If streaming just completed, fire callback
+    if (!isStreaming && message.content.length > 0) {
+      onStreamingComplete?.();
     }
-
-    // Reset for new streaming
-    indexRef.current = 0;
-    startTimeRef.current = null;
-    setDisplayedText("");
-
-    const fullText = message.content;
-
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = timestamp - startTimeRef.current;
-      const targetIndex = Math.min(Math.floor(elapsed / CHAR_DELAY), fullText.length);
-
-      if (targetIndex > indexRef.current) {
-        indexRef.current = targetIndex;
-        setDisplayedText(fullText.slice(0, targetIndex));
-      }
-
-      if (targetIndex < fullText.length) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        // Streaming complete
-        onStreamingComplete?.();
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [isStreaming, message.content]);
+  }, [message.content, isStreaming, onStreamingComplete]);
 
   // Basic markdown: bold and list items
   const renderContent = (text: string) => {

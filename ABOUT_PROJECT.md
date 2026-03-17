@@ -11,11 +11,11 @@
 │     React Frontend      │ HTTP  │       FastAPI Backend         │
 │  (Vite + TypeScript)    │◄─────►│    (Python + Uvicorn)        │
 │                         │       │                              │
-│  Auth ─ Chat ─ Vault    │       │  RAG Engine ─ Sarvam LLM    │
+│  Auth ─ Chat ─ Vault    │       │  RAG Engine ─ Groq LLM      │
 └──────────┬──────────────┘       └──────────┬───────────────────┘
            │                                 │
       ┌────▼────┐                     ┌──────▼──────┐
-      │Firebase │                     │  ChromaDB   │
+      │Firebase │                     │  Pinecone   │
       │Auth +   │                     │ Vector Store│
       │Firestore│                     │(Embeddings) │
       └─────────┘                     └─────────────┘
@@ -33,11 +33,11 @@
 | **FastAPI** | REST API framework for serving chat & resource endpoints |
 | **Uvicorn** | ASGI server for running FastAPI in production |
 | **LangChain** | Orchestration framework for the RAG pipeline (chains, retrievers, prompts) |
-| **LangChain Community** | Community integrations (ChromaDB vector store, PyPDF loader) |
+| **LangChain Community** | Community integrations (PyPDF loader) |
 | **LangChain HuggingFace** | HuggingFace embedding model integration |
-| **ChromaDB** | Vector database for storing and retrieving document embeddings |
+| **Pinecone** | Cloud vector database for storing and retrieving document embeddings |
 | **Sentence Transformers** | Embedding model (`all-MiniLM-L6-v2`) for document vectorization |
-| **Sarvam AI** | LLM provider — custom LangChain wrapper (`SarvamChatModel`) for answer generation |
+| **Groq / Mixtral** | LLM provider — using `mixtral-8x7b-32768` for blazingly fast answer generation |
 | **PyPDF** | PDF document parsing for ingesting study materials |
 | **python-dotenv** | Environment variable management |
 | **Pydantic** | Data validation for API request/response models |
@@ -78,11 +78,10 @@
 ```
 College-Buddy/
 ├── server.py              # FastAPI backend (chat, subjects, resources endpoints)
-├── rag_engine.py          # RAG pipeline (ChromaDB + Sarvam AI + LangChain)
-├── sarvam_langchain.py    # Custom LangChain wrapper for Sarvam AI LLM
-├── build_embeddings.py    # Script to vectorize PDFs into ChromaDB
+├── rag_engine.py          # RAG pipeline (Pinecone + Groq + LangChain)
+├── build_embeddings.py    # Script to vectorize PDFs into Pinecone
 ├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (SARVAM_API_KEY)
+├── .env                   # Environment variables (GROQ_API_KEY, PINECONE_API_KEY)
 │
 ├── Stuff/                 # Study materials (organized by subject)
 │   ├── COA/               # Computer Organization & Architecture
@@ -90,8 +89,7 @@ College-Buddy/
 │   ├── Maths/             # Mathematics
 │   └── UHV/               # Universal Human Values
 │
-├── chroma_db/             # ChromaDB vector store (pre-built embeddings)
-│
+
 └── frontend/              # React + TypeScript frontend
     ├── public/
     │   └── mascot.png     # CampusAI mascot image
@@ -131,9 +129,9 @@ College-Buddy/
 
 ## How It Works
 
-1. **Document Ingestion** — `build_embeddings.py` scans `Stuff/` for PDFs, splits them into chunks, generates embeddings using `all-MiniLM-L6-v2`, and stores them in ChromaDB with subject/category metadata.
+1. **Document Ingestion** — `build_embeddings.py` scans `Stuff/` for PDFs, splits them into chunks, generates embeddings using `all-MiniLM-L6-v2`, and stores them in Pinecone with subject/category metadata.
 
-2. **Question Answering** — When a user asks a question, the RAG engine retrieves the top-5 most relevant chunks from ChromaDB (optionally filtered by subject), constructs a prompt with the retrieved context, and sends it to Sarvam AI's LLM for answer generation.
+2. **Question Answering** — When a user asks a question, the RAG engine retrieves the top-5 most relevant chunks from Pinecone (optionally filtered by subject), constructs a prompt with the retrieved context, and sends it to Groq's Mixtral LLM for lightning-fast answer generation.
 
 3. **API Layer** — FastAPI serves endpoints for chat (`/api/chat`), subjects (`/api/subjects`), and resources (`/api/resources`), with the frontend consuming them via React Query.
 

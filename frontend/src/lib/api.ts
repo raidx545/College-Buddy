@@ -33,6 +33,62 @@ export async function sendChatMessage(
     return data.answer;
 }
 
+export async function streamChatMessage(
+    message: string,
+    subject: string = "All",
+    onChunk: (chunk: string) => void
+): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, subject }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Server error" }));
+        throw new Error(err.detail || "Failed to connect to stream");
+    }
+
+    if (!res.body) {
+        throw new Error("No readable stream in response");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            
+            // Keep the last incomplete line in the buffer
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    const dataStr = line.slice(6).trim();
+                    if (dataStr === "[DONE]") return;
+                    
+                    try {
+                        const parsed = JSON.parse(dataStr);
+                        if (parsed.chunk) {
+                            onChunk(parsed.chunk);
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse SSE chunk", dataStr);
+                    }
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+
 export async function getSubjects(): Promise<string[]> {
     const res = await fetch(`${API_BASE}/api/subjects`);
     if (!res.ok) throw new Error("Failed to fetch subjects");

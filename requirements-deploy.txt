@@ -7,13 +7,14 @@ langchain-community
 langchain-huggingface
 langchain-classic
 langchain-text-splitters
+langchain-pinecone
 
 # Vector DB & Embeddings
-chromadb
+pinecone-client
 sentence-transformers
 
 # LLM
-sarvamai
+langchain-groq
 
 # PDF processing
 pypdf

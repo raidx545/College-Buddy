@@ -2,9 +2,10 @@ langchain-community
 langchain-huggingface
 langchain-classic
 langchain-text-splitters
-chromadb
+langchain-pinecone
+pinecone-client
 sentence-transformers
-sarvamai
+langchain-groq
 pypdf
 fastapi
 uvicorn[standard]

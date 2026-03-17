@@ -6,8 +6,9 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+import json
 
 # NOTE: rag_engine is NOT imported here — it's loaded lazily in the
 # background thread so uvicorn can bind to the port immediately.
@@ -75,6 +76,24 @@ def chat(req: ChatRequest):
     return ChatResponse(answer=answer)
 
 
+@app.post("/api/chat/stream")
+def chat_stream(req: ChatRequest):
+    if bot is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Bot not loaded. Run 'python build_embeddings.py' first."
+        )
+
+    def event_generator():
+        for chunk in bot.stream_ask(req.message, subject=req.subject):
+            # Format as Server-Sent Event (SSE)
+            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+
 @app.get("/api/subjects")
 def get_subjects():
     if bot is None:
@@ -101,26 +120,51 @@ def list_resources():
             rel_path = os.path.relpath(filepath, data_dir)
             parts = rel_path.split(os.sep)
             
-            # Extract subject from folder
-            subject = parts[0] if len(parts) > 1 else "General"
-            
-            # Detect category
             category = "Notes"
-            fname_lower = filename.lower()
-            if len(parts) > 2:
-                subfolder = parts[1].lower()
-                if "pyq" in subfolder:
-                    category = "PYQs"
-                elif "syllabus" in subfolder:
-                    category = "Syllabus"
-                elif "assignment" in subfolder:
-                    category = "Assignments"
-            elif "syllabus" in fname_lower:
-                category = "Syllabus"
-            elif "pyq" in fname_lower:
+            subject = "General"
+            
+            pyq_subject_map = {
+                "COMPUTER ORGANIZATION AND ARCHITECTURE": "COA",
+                "DATA STRUCTURE": "DS",
+                "DATA STRUCTURES": "DS",
+                "DISCRETE STRUCTURES THEORY OF LOGIC": "DSTL",
+                "MATHEMATICS IV": "Maths IV",
+                "PYTHON PROGRAMMING": "Python",
+                "UNIVERSAL HUMAN VALUES AND PROFESSIONAL ETHICS": "UHV",
+            }
+            
+            if parts[0] == "Notes":
+                category = "Notes"
+                if len(parts) > 2:
+                    subject = parts[1]
+            elif parts[0] == "PYQs":
                 category = "PYQs"
-            elif "assignment" in fname_lower:
-                category = "Assignments"
+                name_without_ext = os.path.splitext(filename)[0]
+                if "-" in name_without_ext:
+                    subject_parts = name_without_ext.split("-", 1)
+                    if len(subject_parts) > 1:
+                        raw_subj = subject_parts[1].replace("-", " ").upper()
+                        subject = pyq_subject_map.get(raw_subj, raw_subj.title())
+                else:
+                    raw_subj = name_without_ext.replace("-", " ").replace("_", " ").upper()
+                    subject = pyq_subject_map.get(raw_subj, raw_subj.title())
+            else:
+                subject = parts[0] if len(parts) > 1 else "General"
+                fname_lower = filename.lower()
+                if len(parts) > 2:
+                    subfolder = parts[1].lower()
+                    if "pyq" in subfolder:
+                        category = "PYQs"
+                    elif "syllabus" in subfolder:
+                        category = "Syllabus"
+                    elif "assignment" in subfolder:
+                        category = "Assignments"
+                elif "syllabus" in fname_lower:
+                    category = "Syllabus"
+                elif "pyq" in fname_lower:
+                    category = "PYQs"
+                elif "assignment" in fname_lower:
+                    category = "Assignments"
             
             # Get file modification time
             mod_time = os.path.getmtime(filepath)
