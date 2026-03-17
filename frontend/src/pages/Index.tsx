@@ -6,8 +6,8 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { motion, AnimatePresence } from "framer-motion";
 
 const suggestions = [
-  { text: "How do I solve quadratic equations?" },
-  { text: "Check my thesis statement" },
+  { text: "How do I " },
+  { text: "What is Python's most import Previous Year Question ? " },
 ];
 
 const Index = () => {

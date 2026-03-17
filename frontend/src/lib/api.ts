@@ -36,12 +36,13 @@ export async function sendChatMessage(
 export async function streamChatMessage(
     message: string,
     subject: string = "All",
+    chatId: string,
     onChunk: (chunk: string) => void
 ): Promise<void> {
     const res = await fetch(`${API_BASE}/api/chat/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, subject }),
+        body: JSON.stringify({ message, subject, chat_id: chatId }),
     });
 
     if (!res.ok) {
@@ -64,15 +65,13 @@ export async function streamChatMessage(
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
-            
-            // Keep the last incomplete line in the buffer
             buffer = lines.pop() || "";
 
             for (const line of lines) {
                 if (line.startsWith("data: ")) {
                     const dataStr = line.slice(6).trim();
                     if (dataStr === "[DONE]") return;
-                    
+
                     try {
                         const parsed = JSON.parse(dataStr);
                         if (parsed.chunk) {
@@ -87,6 +86,10 @@ export async function streamChatMessage(
     } finally {
         reader.releaseLock();
     }
+}
+
+export async function clearSession(chatId: string): Promise<void> {
+    await fetch(`${API_BASE}/api/chat/session/${chatId}`, { method: "DELETE" });
 }
 
 export async function getSubjects(): Promise<string[]> {

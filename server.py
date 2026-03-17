@@ -45,14 +45,57 @@ def startup():
     thread.start()
 
 
+# ---------------------------------------------------------------------------
+# Server-side session store: { chat_id -> {"history": [...], "summary": ""} }
+# Each chat has its OWN isolated history — sessions never share context.
+# ---------------------------------------------------------------------------
+session_store: dict = {}
+SESSION_HISTORY_LIMIT = 10  # keep last 10 messages (5 turns) per session
+
+
 # --- Request/Response models ---
 class ChatRequest(BaseModel):
     message: str
     subject: str = "All"
+    chat_id: str  # unique Firestore chat document ID
 
 
 class ChatResponse(BaseModel):
     answer: str
+
+
+# --- Helpers ---
+def get_session(chat_id: str) -> dict:
+    """Get or create a session entry for the given chat_id."""
+    if chat_id not in session_store:
+        session_store[chat_id] = {"history": [], "summary": ""}
+    return session_store[chat_id]
+
+
+def update_session(chat_id: str, user_msg: str, bot_msg: str):
+    """Append turn to session and trim to limit."""
+    sess = get_session(chat_id)
+    sess["history"].append({"role": "user", "content": user_msg})
+    sess["history"].append({"role": "assistant", "content": bot_msg})
+    # Keep only last N messages
+    sess["history"] = sess["history"][-SESSION_HISTORY_LIMIT:]
+
+
+def refresh_summary_background(chat_id: str):
+    """Generate a new summary in a background thread — non-blocking."""
+    def _run():
+        sess = session_store.get(chat_id)
+        if not sess or not bot:
+            return
+        try:
+            new_summary = bot.summarize_session(sess["history"])
+            if new_summary:
+                sess["summary"] = new_summary
+                print(f"[session:{chat_id[:8]}] Summary updated.")
+        except Exception as e:
+            print(f"[session:{chat_id[:8]}] Summary error: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 # --- Endpoints ---
@@ -61,36 +104,64 @@ def health_check():
     return {
         "status": "ok",
         "bot_loaded": bot is not None,
+        "active_sessions": len(session_store),
     }
 
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     if bot is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Bot not loaded. Run 'python build_embeddings.py' first."
-        )
-    
-    answer = bot.ask(req.message, subject=req.subject)
+        raise HTTPException(status_code=503, detail="Bot not loaded.")
+
+    sess = get_session(req.chat_id)
+    answer = bot.ask(
+        req.message,
+        subject=req.subject,
+        chat_history=sess["history"],
+        session_summary=sess["summary"]
+    )
+    update_session(req.chat_id, req.message, answer)
+    refresh_summary_background(req.chat_id)
     return ChatResponse(answer=answer)
 
 
 @app.post("/api/chat/stream")
 def chat_stream(req: ChatRequest):
     if bot is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Bot not loaded. Run 'python build_embeddings.py' first."
-        )
+        raise HTTPException(status_code=503, detail="Bot not loaded.")
+
+    sess = get_session(req.chat_id)
+    # Capture history/summary at request time (snapshot)
+    history_snapshot = list(sess["history"])
+    summary_snapshot = sess["summary"]
+
+    collected_answer = []
 
     def event_generator():
-        for chunk in bot.stream_ask(req.message, subject=req.subject):
-            # Format as Server-Sent Event (SSE)
+        for chunk in bot.stream_ask(
+            req.message,
+            subject=req.subject,
+            chat_history=history_snapshot,
+            session_summary=summary_snapshot
+        ):
+            collected_answer.append(chunk)
             yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+        # Stream done — update session store
+        full_answer = "".join(collected_answer)
+        update_session(req.chat_id, req.message, full_answer)
+        refresh_summary_background(req.chat_id)
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.delete("/api/chat/session/{chat_id}")
+def clear_session(chat_id: str):
+    """Clear server-side session memory for a specific chat."""
+    if chat_id in session_store:
+        del session_store[chat_id]
+    return {"status": "cleared"}
 
 
 

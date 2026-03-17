@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { sendChatMessage, streamChatMessage } from "@/lib/api";
+import { sendChatMessage, streamChatMessage, clearSession } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { db } from "@/lib/firebase";
 import {
@@ -27,6 +27,7 @@ export interface ChatSession {
   title: string;
   messages: ChatMessage[];
   createdAt: Date;
+  summary: string; // long-term memory: compact conversation summary
 }
 
 interface ChatContextType {
@@ -81,6 +82,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         return {
           id: doc.id,
           title: data.title || "New Chat",
+          summary: data.summary || "",
           messages: (data.messages || []).map((m: any) => ({
             ...m,
             timestamp: m.timestamp instanceof Timestamp ? m.timestamp.toDate() : new Date(),
@@ -166,51 +168,42 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const botMsgId = (Date.now() + 1).toString();
-      
-      // Initialize an empty bot message
+
+      // Initialize an empty bot message immediately
       const initialBotMsg: ChatMessage = {
         id: botMsgId,
         role: "bot",
         content: "",
         timestamp: new Date(),
       };
-      
-      // Add empty bot message to UI immediately
-      setSessions(prev => prev.map(s => 
-        s.id === currentSessionId 
-          ? { ...s, messages: [...newMessages, initialBotMsg] } 
+
+      setSessions(prev => prev.map(s =>
+        s.id === currentSessionId
+          ? { ...s, messages: [...newMessages, initialBotMsg] }
           : s
       ));
 
-      // Start streaming (no fake animation, real stream)
       setStreamingMessageId(botMsgId);
-      
+
       let finalContent = "";
 
-      await streamChatMessage(content, selectedSubject, (chunk) => {
+      // Backend manages history/summary — just send chat_id
+      await streamChatMessage(content, selectedSubject, currentSessionId, (chunk) => {
         finalContent += chunk;
-        
-        // Update the UI with the new chunk
+
         setSessions(prev => prev.map(s => {
           if (s.id !== currentSessionId) return s;
-          
           const msgs = [...s.messages];
           const lastIdx = msgs.length - 1;
-          
-          // Ensure we are updating the bot message we just added
           if (lastIdx >= 0 && msgs[lastIdx].id === botMsgId) {
             msgs[lastIdx] = { ...msgs[lastIdx], content: finalContent };
           }
-          
           return { ...s, messages: msgs };
         }));
       });
 
-      // Stream complete: Update Firestore ONCE at the end
-      const finalBotMsg: ChatMessage = {
-        ...initialBotMsg,
-        content: finalContent,
-      };
+      // Save final message to Firestore
+      const finalBotMsg: ChatMessage = { ...initialBotMsg, content: finalContent };
       const finalMessages = [...newMessages, finalBotMsg];
       await updateDoc(sessionRef, { messages: finalMessages });
 
@@ -218,11 +211,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "bot",
-        content: `⚠️ Error: ${error instanceof Error ? error.message : "Could not reach server."} `,
+        content: `⚠️ Error: ${error instanceof Error ? error.message : "Could not reach server."}`,
         timestamp: new Date(),
       };
       const finalErrMessages = [...newMessages, errorMsg];
-
       setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: finalErrMessages } : s));
       await updateDoc(sessionRef, { messages: finalErrMessages });
     } finally {
@@ -234,6 +226,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const deleteSession = async (id: string) => {
     try {
       const userEmail = user?.email || user?.uid || "";
+      // Clear server-side session memory for this chat
+      await clearSession(id);
       await deleteDoc(doc(db, "users", userEmail, "chats", id));
       if (activeSessionId === id && sessions.length > 0) {
         const remaining = sessions.filter(s => s.id !== id);
